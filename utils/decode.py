@@ -24,9 +24,9 @@ def _meshgrid(gt_x):
     bs = gt_x.shape[0]
     S = gt_x.shape[1]
     last_dim = gt_x.shape[-1]
-    device = gt_x.device
-    x = torch.arange(S)
-    y = torch.arange(S)
+    device, dtype = gt_x.device, gt_x.dtype
+    x = torch.arange(S, device=device, dtype=dtype)
+    y = torch.arange(S, device=device, dtype=dtype)
     ii, jj = torch.meshgrid(x, y, indexing="ij")
     ii = ii.reshape(1, S, S, 1).expand(bs, S, S, last_dim).to(device)
     jj = jj.reshape(1, S, S, 1).expand(bs, S, S, last_dim).to(device)
@@ -76,10 +76,48 @@ def decode_labels(gt):
     # 2-7-7-6
     out_bbox = torch.cat((gt_x1, gt_y1, gt_x2, gt_y2, gt_conf, gt_cls),dim=-1)
     # ic(out_bbox.shape)
-
-
     # ic(out_bbox.shape)
     return out_bbox
+
+def decode_labels_list(gt):
+    '''
+    bs*7*7*5+C
+    x-y-w-h-conf-cls
+    从偏移量转化为grid坐标系
+    '''
+    bs = gt.shape[0]
+    S = gt.shape[1]
+    gt_x = gt[:, :, :, 0:1] # ([2, 7, 7, 1])
+    gt_y = gt[:, :, :, 1:2] # ([2, 7, 7, 1])
+    gt_w = gt[:, :, :, 2:3] # ([2, 7, 7, 1])
+    gt_h = gt[:, :, :, 3:4] # ([2, 7, 7, 1])
+    gt_conf = gt[:, :, :, 4:5] # ([2, 7, 7, 1])
+    gt_cls = gt[:, :, :, 5:] # ([2, 7, 7, 20])
+    # ([2, 7, 7, 1])
+    gt_x1, gt_y1, gt_x2, gt_y2 = _xywh2xyxy(gt_x, gt_y, gt_w, gt_h)
+
+    # ([2, 7, 7, 20]) --> ([2, 7, 7, 1])
+    gt_cls_argmax = gt_cls.argmax(dim=-1,keepdim=True)
+    # ([2, 7, 7, 5])
+    comb_gt = torch.cat((gt_x1, gt_y1, gt_x2, gt_y2, gt_cls_argmax),dim=-1)
+    obj_mask = (gt_conf[:, :, :, 0] > 0.5) # 2-7-7
+
+    out_list = []
+    # ic(obj_mask.shape)
+    for batch in range(bs):
+        batch_list = []
+        batch_comb = comb_gt[batch]
+        batch_mask = obj_mask[batch]
+
+        picked = batch_comb[batch_mask]
+
+        if picked.numel() == 0:
+            out_list.append(torch.zeros((0, 5), device=gt.device, dtype=gt.dtype))
+        else:
+            out_list.append(picked)
+            
+    return out_list
+
 
 
 def decode_preds(preds, B=2, conf_thresh=0.01):
@@ -128,7 +166,7 @@ def decode_preds(preds, B=2, conf_thresh=0.01):
     # ic(out_pred.shape)
 
 if __name__ == "__main__":
-    test_gt = torch.randn(2, 7, 7, 6)
-    decode_labels(test_gt) # [num, 6] num为标签的数量, 6为   x1-y1-x2-y2-conf-cls
+    test_gt = torch.randn(2, 7, 7, 25)
+    decode_labels_list(test_gt) # [num, 6] num为标签的数量, 6为   x1-y1-x2-y2-conf-cls
     # test_pred = torch.randn(2, 7, 7, 11)
     # decode_preds(test_pred) # [num, 6] num为预测框中经过conf过滤后的数量, 6为   x1-y1-x2-y2-conf-cls

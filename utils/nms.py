@@ -2,6 +2,10 @@
 输入经过decode的模型预测值（全图偏移，grdi cell坐标系下【0-7】）
 经过nms过滤，输出过滤后的值，含义保持一致。
 此时的nms函数的返回值是一个list，长度对应bs大小
+
+关于类别：
+decode之后，类别信息依旧为onehot
+nms之后，类别信息为具体的类别
 '''
 import torch
 
