@@ -355,14 +355,3 @@ class VOCDataset(Dataset):
         return img_t, yolo_t
 
 
-if __name__ == "__main__":
-
-    train_path = r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\YOLOv1_dataset\train"
-    test_path = r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\YOLOv1_dataset\test"
-    train_transform, val_transform = build_yolov1_transforms(img_size=448, normalize="none")
-
-    train_dataset = VOCDataset(base_path=train_path, transform=train_transform, img_size=448, S=7)
-    val_dataset = VOCDataset(base_path=test_path, transform=val_transform, img_size=448, S=7)
-    img_tensor, yolo_tensor = train_dataset[0]
-    print("img_tensor:", img_tensor.shape, img_tensor.dtype)
-    print("yolo_tensor:", yolo_tensor.shape, yolo_tensor.dtype)

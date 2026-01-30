@@ -1,3 +1,8 @@
+'''
+输入经过decode的模型预测值（全图偏移，grdi cell坐标系下【0-7】）
+经过nms过滤，输出过滤后的值，含义保持一致。
+此时的nms函数的返回值是一个list，长度对应bs大小
+'''
 import torch
 
 from icecream import ic
@@ -89,3 +94,10 @@ def nms(out_pred, conf_thresh=0.01, iou_thresh=0.5):
             
     # ic(out_boxes)   
     return out_boxes
+
+
+if __name__ == "__main__":
+    test_tensor = torch.randn(2, 7, 7, 2, 6)
+    out_boxes = nms(test_tensor, conf_thresh=0.01, iou_thresh=0.5)
+    ic(out_boxes)
+    ic(len(out_boxes))

@@ -1,3 +1,8 @@
+'''
+把模型的输出和标注文件
+从xywh-conf-cls(相对于grid cell左上角的偏移【0-1】)
+转化为xyxyconf cls(相对于全图，在grid cell坐标系下的偏移【0-7】)
+'''
 import torch
 
 from icecream import ic
@@ -20,8 +25,8 @@ def _meshgrid(gt_x):
     S = gt_x.shape[1]
     last_dim = gt_x.shape[-1]
     device = gt_x.device
-    x = torch.arange(7)
-    y = torch.arange(7)
+    x = torch.arange(S)
+    y = torch.arange(S)
     ii, jj = torch.meshgrid(x, y, indexing="ij")
     ii = ii.reshape(1, S, S, 1).expand(bs, S, S, last_dim).to(device)
     jj = jj.reshape(1, S, S, 1).expand(bs, S, S, last_dim).to(device)
