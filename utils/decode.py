@@ -84,6 +84,8 @@ def decode_labels_list(gt):
     bs*7*7*5+C
     x-y-w-h-conf-cls
     从偏移量转化为grid坐标系
+    返回值：
+    一个list，元素的数量为bs，每个tensor为该batch内的[nums, 5]
     '''
     bs = gt.shape[0]
     S = gt.shape[1]
@@ -115,7 +117,7 @@ def decode_labels_list(gt):
             out_list.append(torch.zeros((0, 5), device=gt.device, dtype=gt.dtype))
         else:
             out_list.append(picked)
-            
+    # ic(out_list[0].shape)
     return out_list
 
 
