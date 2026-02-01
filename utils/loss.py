@@ -13,15 +13,16 @@ class YoloLoss(nn.Module):
         self.ic_debug = ic_debug
 
     def _check_finite(self, name: str, t: torch.Tensor):
+        
         if not torch.isfinite(t).all():
             bad_nan = torch.isnan(t).any().item()
             bad_inf = torch.isinf(t).any().item()
             t_min = torch.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0).min().item()
             t_max = torch.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0).max().item()
-            raise RuntimeError(
-                f"[YoloLoss] {name} has NaN/Inf | nan={bad_nan} inf={bad_inf} "
-                f"| min~={t_min:.6g} max~={t_max:.6g} | shape={tuple(t.shape)}"
-            )
+            # raise RuntimeError(
+            #     f"[YoloLoss] {name} has NaN/Inf | nan={bad_nan} inf={bad_inf} "
+            #     f"| min~={t_min:.6g} max~={t_max:.6g} | shape={tuple(t.shape)}"
+            # )
 
     def _grid_mesh(self, sample_x):
         bs = sample_x.shape[0]

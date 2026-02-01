@@ -8,6 +8,7 @@ from pre_weights.load_preweights import load_backbone_pretrained_to_detector
 
 from utils.optim_lr_factory import build_optimizer, build_lr_scheduler
 from utils.loss2 import YOLO_Loss
+from utils.loss import YoloLoss
 from utils.fit_one_epoch import fit_one_epoch
 from utils.logger import save_logger, save_config
 
@@ -23,55 +24,66 @@ def base_config():
     config = {
         "GPU_model": GPU_model,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "exp_name": "test_exp",
+        "exp_name": "exp1_full",
         "model_name": "YOLOv1",
         "save_interval": 10,
-        # "train_path": r'D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\train',
-        # "val_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\val",
-        "train_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\YOLOv1_dataset\train",
-        "test_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\YOLOv1_dataset\test",
+        "train_path": r"/root/autodl-tmp/dataset_full/YOLOv1_dataset/train",
+        "test_path": r"/root/autodl-tmp/dataset_full/YOLOv1_dataset/test",
         # "pre_weights": r"pre_weights\best_model.pth",
-        "pre_weights": None,
+        "pre_weights": r"pre_weights/best_model.pth",
         # test model 
         "debug_mode": 0.2, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
         "num_classes": 20,
         "input_size": 448,
         "batch_size": 32,
-        "metric_interval": 10,
-        "num_workers": 2,
+        "epochs": 135,
+        "metric_interval": 5, # 每间隔几轮评估一次
+        "num_workers": 8,
         "persistent_workers": True,
         "S": 7,
         "B": 2,
         "lambda_coord": 5,
         "lambda_noobj": 0.5,
-        "epochs": 100,
+        "profile_time" : False,
+        "profile_cuda_sync" : False,
+        "optimizer": {
+            "type": "SGD",
+            "lr": 1e-3,
+            "momentum": 0.9,
+            "weight_decay": 0.0005,
+            # "lr_scheduler":{
+            #     "type": "StepLR",
+            #     "step_size": 30,
+            #     "gamma": 0.1,
+            # }
+            
+            "lr_scheduler": {
+                "type": "YOLOv1DetLR",
+                "lr_warmup_start": 0.0001,
+                "lr_base": 1e-3,
+                "warmup_epochs": 10,
+                "phase1_epochs": 75,
+                "phase2_epochs": 30,
+                "phase3_epochs": 30,
+            },
+        },
         # "optimizer": {
-        #     "type": "SGD",
+        #     "type": "Adam",
         #     "lr": 0.0001,
         #     "lr_scheduler": {
-        #         "type": "StepLR",
-        #         "step_size": 30,
-        #         "gamma": 0.1,
+        #         "type": "CosineAnnealingLR",
+        #         "T_max": 100,
+        #         "eta_min": 1e-6,
         #     },
-        #     "momentum": 0.9,
         #     "weight_decay": 1e-4,
-        # },
-        "optimizer": {
-            "type": "Adam",
-            "lr": 0.00001,
-            "lr_scheduler": {
-                "type": "CosineAnnealingLR",
-                "T_max": 100,
-                "eta_min": 1e-6,
-            },
-            "weight_decay": 1e-4,
-        }
+        # }
 
     }
     config["exp_name"] += str("_" + exp_time)
     return config
 
 def train():
+    state = None
     cfg = base_config()
     save_config(cfg)
 
@@ -91,22 +103,22 @@ def train():
     train_loader, test_loader = build_dataset(cfg)
     optimizer = build_optimizer(model, cfg=cfg)
     lr_scheduler = build_lr_scheduler(optimizer, cfg=cfg)
-    # loss_fn = YoloLoss(S=cfg["S"], 
-    #                    B=cfg["B"], 
-    #                    C=cfg["num_classes"], 
-    #                    lambda_coord=cfg["lambda_coord"], 
-    #                    lambda_noobj=cfg["lambda_noobj"], 
-    #                    ic_debug=False)
-    loss_fn = YOLO_Loss(S=cfg["S"], 
+    loss_fn = YoloLoss(S=cfg["S"], 
                        B=cfg["B"], 
                        C=cfg["num_classes"], 
+                       lambda_coord=cfg["lambda_coord"], 
+                       lambda_noobj=cfg["lambda_noobj"], 
                        ic_debug=False)
+    # loss_fn = YOLO_Loss(S=cfg["S"], 
+    #                    B=cfg["B"], 
+    #                    C=cfg["num_classes"], 
+    #                    ic_debug=False)
     for epoch in range(cfg["epochs"]):
-        metrics = fit_one_epoch(
-            epoch, cfg, model, train_loader, test_loader, loss_fn, optimizer, lr_scheduler
+        metrics, state= fit_one_epoch(
+            epoch, cfg, model, train_loader, test_loader, loss_fn, optimizer, lr_scheduler, state
         )
         # save logs and model
-        save_logger(model, metrics, cfg)
+        save_logger(model, metrics, cfg, state)
 
 
 if __name__ == '__main__':

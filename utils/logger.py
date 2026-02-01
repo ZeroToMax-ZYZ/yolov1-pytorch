@@ -46,7 +46,7 @@ def save_csv(metrics, csv_path):
 def plot_metrics(cfg, csv_path, plt_path):
     # 1. 设置全局字体为 Times New Roman
     plt.rcParams["font.family"] = "serif"
-    plt.rcParams["font.serif"] = ["Times New Roman"]
+    # plt.rcParams["font.serif"] = ["Times New Roman"]
     
     epochs = []
     train_losses, val_losses = [], []
@@ -107,7 +107,7 @@ def plot_metrics(cfg, csv_path, plt_path):
     # plt.show()
 
 
-def save_logger(model, metrics, cfg):
+def save_logger(model, metrics, cfg, state):
     base_logs_path = os.path.join("logs", "logs_upload", cfg["exp_name"])
     base_weights_path = os.path.join("logs", "logs_weights", cfg["exp_name"])
 
@@ -117,31 +117,28 @@ def save_logger(model, metrics, cfg):
 
     save_csv(metrics, csv_path)
     plot_metrics(cfg, csv_path, plt_path)
-    save_model(model, cfg, csv_path, model_path, metrics)
+    save_model(model, cfg, csv_path, model_path, metrics, state)
 
 
 
-def save_model(model, cfg, csv_path, model_path, metrics):
+def save_model(model, cfg, csv_path, model_path, metrics, state):
     '''
     save best and last model
     and every cfg["save_interval"] epoch
     '''
     # newest metrics
-    val_top1 = metrics["val_map50"]
-    with open(csv_path, "r") as f:
-        lines = f.readlines()
-        last_line = lines[-1]
-        _, _, _, _, _, best_val_top1, _, _, _ = last_line.strip().split(",")
-        best_val_top1 = float(best_val_top1)
+    val_map50 = metrics["val_map50"]
+    
+    best_val_map50 = state.val_map50
     
     # best
-    if val_top1 >= best_val_top1:
+    if val_map50 >= best_val_map50:
         torch.save(model.state_dict(), os.path.join(model_path, "best_model.pth"))
-        print(f"✅ Best model saved with Val map50 Accuracy: {val_top1:.2f}%")
+        print(f"✅ Best model saved with Val map50 Accuracy: {val_map50:.2f}%")
     
     # every save_interval
     if (metrics["epoch"] % cfg["save_interval"]) == 0:
-        torch.save(model.state_dict(), os.path.join(model_path, f"model_epoch_{metrics['epoch']}_valtop1_{val_top1:.2f}.pth"))
+        torch.save(model.state_dict(), os.path.join(model_path, f"model_epoch_{metrics['epoch']}_valtop1_{val_map50:.2f}.pth"))
         # print(f"Model saved at epoch {metrics['epoch']}")
 
     # last

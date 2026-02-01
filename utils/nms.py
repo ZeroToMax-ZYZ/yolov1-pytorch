@@ -32,7 +32,7 @@ def box_iou(box1, box2):
     return iou
     
     
-def nms(out_pred, conf_thresh=0.01, iou_thresh=0.5):
+def nms(out_pred, conf_thresh=0.1, iou_thresh=0.5, topk_per_class=10):
     '''
     out_pred [2,7,7,2,xyxy-conf-cls]
     '''
@@ -55,10 +55,19 @@ def nms(out_pred, conf_thresh=0.01, iou_thresh=0.5):
             valid_boxes = boxes[cls_scores > conf_thresh] # ([48, 4])
             valid_scores = cls_scores[cls_scores > conf_thresh] # ([48])
             
-            # 全概率排序，从大到小
-            sorted_scores, sorted_idx = valid_scores.sort(descending=True) # ([48])
-            sorted_boxes = valid_boxes[sorted_idx] # ([48, 4])
-            
+            if topk_per_class > 0 and valid_scores.numel() > topk_per_class:
+                sorted_scores, topk_idx = torch.topk(
+                    valid_scores,
+                    k=int(topk_per_class),
+                    largest=True,
+                    sorted=True,
+                )
+                sorted_boxes = valid_boxes[topk_idx]
+            else:
+                # 全概率排序，从大到小
+                sorted_scores, sorted_idx = valid_scores.sort(descending=True) # ([48])
+                sorted_boxes = valid_boxes[sorted_idx] # ([48, 4])
+                
             keep_boxes = []
             
             while sorted_scores.shape[0] > 0:

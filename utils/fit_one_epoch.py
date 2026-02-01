@@ -5,11 +5,20 @@ from utils.metrics import compute_map
 from utils.decode import decode_preds, decode_labels_list
 from utils.nms import nms
 
+from dataclasses import dataclass
 
 import time
 from tqdm import tqdm
 from icecream import ic
 
+
+@dataclass
+class Checkpoint:
+    train_map50: float = 0.0
+    train_map50_95: float = 0.0
+    val_map50: float = 0.0
+    val_map50_95: float = 0.0
+    
 
 def fit_train_epoch(epoch, cfg, model, train_loader, loss_fn, optimizer):
     '''
@@ -117,38 +126,46 @@ def fit_val_epoch(epoch, cfg, model, val_loader, loss_fn):
         return epoch_loss, metrics_dict
 
 
-def fit_one_epoch(epoch, cfg, model, train_loader, val_loader, loss_fn, optimizer, lr_scheduler):
+def fit_one_epoch(epoch, cfg, model, train_loader, val_loader, loss_fn, optimizer, lr_scheduler, state=None):
     '''
     return: train_loss, train_top1(0-1), train_top5(0-1),
             val_loss, val_top1(0-1), val_top5(0-1)
     '''
+    # yolov1的学习率策略应当把scheduler放到开头，第一个epoch的lr就应当是warmup的
+    lr_scheduler.step(epoch)
+
+    if state is None:
+        state = Checkpoint()
+
     start_time = time.time()
     train_loss, train_metrics = fit_train_epoch(
-        epoch, cfg, model, train_loader, loss_fn, optimizer
+        epoch, cfg, model, train_loader, loss_fn, optimizer,
     )
     val_loss, val_metrics = fit_val_epoch(
-        epoch, cfg, model, val_loader, loss_fn
+        epoch, cfg, model, val_loader, loss_fn,
     )
-    lr_scheduler.step()
+
 
     end_time = time.time()
     epoch_time = end_time - start_time # (s)
 
-    train_map50 = train_metrics.get("map50", 0.0)
-    train_map50_95 = train_metrics.get("map50-95", 0.0)
-    val_map50 = val_metrics.get("map50", 0.0)
-    val_map50_95 = val_metrics.get("map50-95", 0.0)
+
+    if (epoch + 1) % cfg["metric_interval"] == 0:
+        state.train_map50 = train_metrics.get("map50", 0.0)
+        state.train_map50_95 = train_metrics.get("map50-95", 0.0)
+        state.val_map50 = val_metrics.get("map50", 0.0)
+        state.val_map50_95 = val_metrics.get("map50-95", 0.0)
 
 
     metrics = {
         "epoch": epoch + 1,
         "train_loss": train_loss,
-        "train_map50": train_map50,
-        "train_map50_95": train_map50_95,
+        "train_map50": state.train_map50,
+        "train_map50_95": state.train_map50_95,
         "val_loss": val_loss,
-        "val_map50": val_map50,
-        "val_map50_95": val_map50_95,
+        "val_map50": state.val_map50,
+        "val_map50_95": state.val_map50_95,
         "lr": optimizer.param_groups[0]["lr"],
         "epoch_time": epoch_time,
     }
-    return metrics
+    return metrics, state
