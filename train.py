@@ -7,7 +7,7 @@ from dataset.build_dataset import build_dataset
 from pre_weights.load_preweights import load_backbone_pretrained_to_detector
 
 from utils.optim_lr_factory import build_optimizer, build_lr_scheduler
-from utils.loss import YoloLoss
+from utils.loss2 import YOLO_Loss
 from utils.fit_one_epoch import fit_one_epoch
 from utils.logger import save_logger, save_config
 
@@ -18,7 +18,10 @@ import time
 
 def base_config():
     exp_time = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+    # 获取当前device0的显卡型号
+    GPU_model = torch.cuda.get_device_name(0)
     config = {
+        "GPU_model": GPU_model,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
         "exp_name": "test_exp",
         "model_name": "YOLOv1",
@@ -27,9 +30,10 @@ def base_config():
         # "val_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\val",
         "train_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\YOLOv1_dataset\train",
         "test_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\YOLOv1_dataset\test",
-        "pre_weights": r"pre_weights\best_model.pth",
+        # "pre_weights": r"pre_weights\best_model.pth",
+        "pre_weights": None,
         # test model 
-        "debug_mode": 0.05, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
+        "debug_mode": 0.2, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
         "num_classes": 20,
         "input_size": 448,
         "batch_size": 32,
@@ -41,17 +45,28 @@ def base_config():
         "lambda_coord": 5,
         "lambda_noobj": 0.5,
         "epochs": 100,
+        # "optimizer": {
+        #     "type": "SGD",
+        #     "lr": 0.0001,
+        #     "lr_scheduler": {
+        #         "type": "StepLR",
+        #         "step_size": 30,
+        #         "gamma": 0.1,
+        #     },
+        #     "momentum": 0.9,
+        #     "weight_decay": 1e-4,
+        # },
         "optimizer": {
-            "type": "SGD",
-            "lr": 0.001,
+            "type": "Adam",
+            "lr": 0.00001,
             "lr_scheduler": {
-                "type": "StepLR",
-                "step_size": 30,
-                "gamma": 0.1,
+                "type": "CosineAnnealingLR",
+                "T_max": 100,
+                "eta_min": 1e-6,
             },
-            "momentum": 0.9,
             "weight_decay": 1e-4,
-        },
+        }
+
     }
     config["exp_name"] += str("_" + exp_time)
     return config
@@ -76,13 +91,16 @@ def train():
     train_loader, test_loader = build_dataset(cfg)
     optimizer = build_optimizer(model, cfg=cfg)
     lr_scheduler = build_lr_scheduler(optimizer, cfg=cfg)
-    loss_fn = YoloLoss(S=cfg["S"], 
+    # loss_fn = YoloLoss(S=cfg["S"], 
+    #                    B=cfg["B"], 
+    #                    C=cfg["num_classes"], 
+    #                    lambda_coord=cfg["lambda_coord"], 
+    #                    lambda_noobj=cfg["lambda_noobj"], 
+    #                    ic_debug=False)
+    loss_fn = YOLO_Loss(S=cfg["S"], 
                        B=cfg["B"], 
                        C=cfg["num_classes"], 
-                       lambda_coord=cfg["lambda_coord"], 
-                       lambda_noobj=cfg["lambda_noobj"], 
                        ic_debug=False)
-    
     for epoch in range(cfg["epochs"]):
         metrics = fit_one_epoch(
             epoch, cfg, model, train_loader, test_loader, loss_fn, optimizer, lr_scheduler

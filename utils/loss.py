@@ -12,6 +12,17 @@ class YoloLoss(nn.Module):
         self.lambda_coord, self.lambda_noobj = lambda_coord, lambda_noobj
         self.ic_debug = ic_debug
 
+    def _check_finite(self, name: str, t: torch.Tensor):
+        if not torch.isfinite(t).all():
+            bad_nan = torch.isnan(t).any().item()
+            bad_inf = torch.isinf(t).any().item()
+            t_min = torch.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0).min().item()
+            t_max = torch.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0).max().item()
+            raise RuntimeError(
+                f"[YoloLoss] {name} has NaN/Inf | nan={bad_nan} inf={bad_inf} "
+                f"| min~={t_min:.6g} max~={t_max:.6g} | shape={tuple(t.shape)}"
+            )
+
     def _grid_mesh(self, sample_x):
         bs = sample_x.shape[0]
         device = sample_x.device   
@@ -90,10 +101,22 @@ class YoloLoss(nn.Module):
 
         pred_conf = pred_xywhc[:, :, :, :, 4] # ([2, 7, 7, 2])
 
+        self._check_finite("pred", pred)
+        self._check_finite("target", target)
+        self._check_finite("gt_w", gt_w)
+        self._check_finite("gt_h", gt_h)
+        # 如果你想更严格：直接抓负数
+        if (gt_w < 0).any() or (gt_h < 0).any():
+            raise RuntimeError(
+                f"[YoloLoss] gt_w/gt_h has negative values | "
+                f"gt_w_min={gt_w.min().item():.6g} gt_h_min={gt_h.min().item():.6g}"
+            )
+
         pred_x1, pred_y1, pred_x2, pred_y2 = self._xywh2xyxy(pred_x, pred_y, pred_w, pred_h)
         gt_x1, gt_y1, gt_x2, gt_y2 = self._xywh2xyxy(gt_x, gt_y, gt_w, gt_h)
         # iou : ([2, 7, 7, 2])
         iou = self._iou_xyxy(pred_x1, pred_y1, pred_x2, pred_y2, gt_x1, gt_y1, gt_x2, gt_y2)
+        self._check_finite("iou", iou)
         # iou_max: ([2, 7, 7])
         # iou_index: ([2, 7, 7])
         iou_max, iou_index = torch.max(iou, dim=3)
@@ -130,9 +153,11 @@ class YoloLoss(nn.Module):
         loss_classes = grid_cell_mask * (pred_cls - gt_cls)**2
 
         loss = self.lambda_coord * loss_xy.sum() + self.lambda_coord * loss_wh.sum() + loss_conf.sum() + self.lambda_noobj * loss_conf_no_obj.sum() + loss_classes.sum()
-
+        
+        self._check_finite("loss", loss)
+        
         return loss / bs
-    
+
         if self.ic_debug:
             ic(gt_x.shape)
             ic(pred_2xywhc.shape)

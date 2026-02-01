@@ -32,7 +32,6 @@ def box_iou(box1, box2):
     return iou
     
     
-
 def nms(out_pred, conf_thresh=0.01, iou_thresh=0.5):
     '''
     out_pred [2,7,7,2,xyxy-conf-cls]
