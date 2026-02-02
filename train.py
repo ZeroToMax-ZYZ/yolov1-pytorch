@@ -22,6 +22,7 @@ def base_config():
     # 获取当前device0的显卡型号
     GPU_model = torch.cuda.get_device_name(0)
     config = {
+        "exp_time": exp_time,
         "GPU_model": GPU_model,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
         "exp_name": "exp1_full",
