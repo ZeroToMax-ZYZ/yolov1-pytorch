@@ -145,6 +145,11 @@ class YoloLoss(nn.Module):
         loss_wh = grid_bbox_mask * ((pred_w_sqrt - torch.sqrt(gt_w))**2 + (pred_h_sqrt - torch.sqrt(gt_h))**2)
 
         # 第三行：conf损失
+        '''
+        如果不加 .detach()，PyTorch 会试图通过改变 pred_x/y/w/h 来提高 IoU，
+        从而降低 loss_conf。这会导致坐标回归和置信度回归“打架”。
+        加上 detach 确保了 IoU 仅仅作为通过观察得到的常数目标。
+        '''
         loss_conf = grid_bbox_mask * (pred_conf - iou_max.detach())**2
 
         # 第四行：不负责预测的conf损失

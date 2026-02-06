@@ -111,5 +111,5 @@ def nms(out_pred, conf_thresh=0.1, iou_thresh=0.5, topk_per_class=10):
 if __name__ == "__main__":
     test_tensor = torch.randn(2, 7, 7, 2, 6)
     out_boxes = nms(test_tensor, conf_thresh=0.01, iou_thresh=0.5)
-    ic(out_boxes)
+    ic(out_boxes[0].shape)
     ic(len(out_boxes))

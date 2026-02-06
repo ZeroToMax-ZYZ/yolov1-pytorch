@@ -30,9 +30,9 @@ def base_config():
         "num_classes": 20,
         "debug_mode": None,
         "nms": {
-            "conf_thresh": 0.1,
+            "conf_thresh": 0.01,
             "iou_thresh": 0.5,
-            "topk_per_class": 10
+            "topk_per_class": 20
         },
         "S": 7,
         "B": 2,
