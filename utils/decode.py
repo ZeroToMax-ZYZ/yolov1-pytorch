@@ -168,7 +168,8 @@ def decode_preds(preds, B=2, conf_thresh=0.01):
     # ic(out_pred.shape)
 
 if __name__ == "__main__":
-    test_gt = torch.randn(2, 7, 7, 25)
-    decode_labels_list(test_gt) # [num, 6] num为标签的数量, 6为   x1-y1-x2-y2-conf-cls
-    # test_pred = torch.randn(2, 7, 7, 11)
-    # decode_preds(test_pred) # [num, 6] num为预测框中经过conf过滤后的数量, 6为   x1-y1-x2-y2-conf-cls
+    # test_gt = torch.randn(2, 7, 7, 25)
+    # decode_labels_list(test_gt) # [num, 6] num为标签的数量, 6为   x1-y1-x2-y2-conf-cls
+    test_pred = torch.randn(2, 7, 7, 30)
+    out_pred = decode_preds(test_pred) # [num, 6] num为预测框中经过conf过滤后的数量, 6为   x1-y1-x2-y2-conf-cls
+    ic(out_pred.shape) # ([2, 7, 7, 2, 25])
