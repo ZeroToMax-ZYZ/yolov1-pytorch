@@ -1,0 +1,24 @@
+{
+    "exp_time": "20260208-213247",
+    "GPU_model": "NVIDIA GeForce RTX 3080 Laptop GPU",
+    "device": "cuda",
+    "exp_name": "val_test_20260208-213247",
+    "model_name": "YOLOv1",
+    "model_path": "logs\\logs_weights\\last_model.pth",
+    "train_path": "D:\\1AAAAAstudy\\python_base\\pytorch\\all_dataset/YOLOv1_dataset/train",
+    "test_path": "D:\\1AAAAAstudy\\python_base\\pytorch\\all_dataset/YOLOv1_dataset/test",
+    "save_path": "",
+    "input_size": 448,
+    "batch_size": 32,
+    "num_classes": 20,
+    "debug_mode": null,
+    "nms": {
+        "conf_thresh": 0.01,
+        "iou_thresh": 0.5,
+        "topk_per_class": 20
+    },
+    "S": 7,
+    "B": 2,
+    "num_workers": 8,
+    "persistent_workers": true
+}

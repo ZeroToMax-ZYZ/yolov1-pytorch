@@ -156,7 +156,8 @@ class YoloLoss(nn.Module):
         loss_conf_no_obj = (1 - grid_bbox_mask) * (pred_conf)**2
 
         # 第五行： 类别损失
-        loss_classes = grid_cell_mask * (pred_cls - gt_cls)**2
+        pred_prob = F.softmax(pred_cls, dim=-1)
+        loss_classes = grid_cell_mask * (pred_prob - gt_cls)**2
 
         loss = self.lambda_coord * loss_xy.sum() + self.lambda_coord * loss_wh.sum() + loss_conf.sum() + self.lambda_noobj * loss_conf_no_obj.sum() + loss_classes.sum()
         

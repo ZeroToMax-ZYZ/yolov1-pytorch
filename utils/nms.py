@@ -43,11 +43,6 @@ def nms(out_pred, conf_thresh=0.1, iou_thresh=0.5, topk_per_class=10):
     out_boxes = []
     # out_pred_conf = out_pred[:, :, :, :, 4].reshape(bs,S,S,B,1)
     out_pred_cls = out_pred[:, :, :, :, 5:]
-    # ic(out_pred_conf.shape)
-    # 对cls做预处理，只保留conf*cls的结果最大的那一个，其余的置0
-    # ([2, 7, 7, 2, 1]) * ([2, 7, 7, 2, 20]) --> ([2, 7, 7, 2, 20])
-    # full_cls = out_pred_conf * out_pred_cls
-    # ([2, 7, 7, 2])
     full_cls_idx = torch.argmax(out_pred_cls, dim=-1)
     # ([2, 7, 7, 2, 20])
     keep_cls_mask = F.one_hot(full_cls_idx, num_classes=num_classes)
