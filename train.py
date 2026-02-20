@@ -25,7 +25,8 @@ def base_config():
         "exp_time": exp_time,
         "GPU_model": GPU_model,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "exp_name": "exp1_full",
+        "exp_name": "exp3_full",
+        "exp_note": "在loss中针对cls增加了softmax，测试一下",
         "model_name": "YOLOv1",
         "save_interval": 10,
         "train_path": r"/root/autodl-tmp/dataset_full/YOLOv1_dataset/train",
@@ -33,7 +34,7 @@ def base_config():
         # "pre_weights": r"pre_weights\best_model.pth",
         "pre_weights": r"pre_weights/best_model.pth",
         # test model 
-        "debug_mode": 0.2, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
+        "debug_mode": None, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
         "num_classes": 20,
         "input_size": 448,
         "batch_size": 32,

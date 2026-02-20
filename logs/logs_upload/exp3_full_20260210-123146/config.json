@@ -1,0 +1,41 @@
+{
+    "exp_time": "20260210-123146",
+    "GPU_model": "NVIDIA GeForce RTX 3080",
+    "device": "cuda",
+    "exp_name": "exp3_full_20260210-123146",
+    "exp_note": "\u5728loss\u4e2d\u9488\u5bf9cls\u589e\u52a0\u4e86softmax\uff0c\u6d4b\u8bd5\u4e00\u4e0b",
+    "model_name": "YOLOv1",
+    "save_interval": 10,
+    "train_path": "/root/autodl-tmp/dataset_full/YOLOv1_dataset/train",
+    "test_path": "/root/autodl-tmp/dataset_full/YOLOv1_dataset/test",
+    "pre_weights": "pre_weights/best_model.pth",
+    "debug_mode": null,
+    "num_classes": 20,
+    "input_size": 448,
+    "batch_size": 32,
+    "epochs": 135,
+    "metric_interval": 5,
+    "num_workers": 8,
+    "persistent_workers": true,
+    "S": 7,
+    "B": 2,
+    "lambda_coord": 5,
+    "lambda_noobj": 0.5,
+    "profile_time": false,
+    "profile_cuda_sync": false,
+    "optimizer": {
+        "type": "SGD",
+        "lr": 0.001,
+        "momentum": 0.9,
+        "weight_decay": 0.0005,
+        "lr_scheduler": {
+            "type": "YOLOv1DetLR",
+            "lr_warmup_start": 0.0001,
+            "lr_base": 0.001,
+            "warmup_epochs": 10,
+            "phase1_epochs": 75,
+            "phase2_epochs": 30,
+            "phase3_epochs": 30
+        }
+    }
+}

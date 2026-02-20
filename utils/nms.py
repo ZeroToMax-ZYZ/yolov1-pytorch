@@ -42,11 +42,13 @@ def nms(out_pred, conf_thresh=0.1, iou_thresh=0.5, topk_per_class=10):
     num_classes = dim - 5
     out_boxes = []
     # out_pred_conf = out_pred[:, :, :, :, 4].reshape(bs,S,S,B,1)
+    # 把cls只保留最大的，其余的置0
     out_pred_cls = out_pred[:, :, :, :, 5:]
+    # 找到最大的对应的索引
     full_cls_idx = torch.argmax(out_pred_cls, dim=-1)
     # ([2, 7, 7, 2, 20])
     keep_cls_mask = F.one_hot(full_cls_idx, num_classes=num_classes)
-
+    # 替换
     out_pred[:, :, :, :, 5:] = out_pred_cls * keep_cls_mask.float()
 
     for b in range(bs):
